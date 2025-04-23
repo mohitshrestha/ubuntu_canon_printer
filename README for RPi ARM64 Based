@@ -1,0 +1,179 @@
+# 🖨️ Raspberry Pi 4 Canon LBP2900 Network Printer Server Setup (Ubuntu 24.04 LTS)
+
+This guide walks you through setting up a Canon LBP2900 USB printer as a network printer using a Raspberry Pi 4 running **Ubuntu 24.04 LTS (ARM64)**. We'll install CUPS, Canon's CAPT ARM drivers, and configure the printer to be accessible over your local network.
+
+---
+
+## 📦 Requirements
+
+- Raspberry Pi 4 with Ubuntu 24.04 LTS (ARM64)
+- Canon LBP2900 USB Printer
+- USB cable
+- Network with Wi-Fi access
+- Basic terminal access
+
+---
+
+## 🚀 Step-by-Step Instructions
+
+### ✅ Step 1: Update Your Raspberry Pi
+
+```bash
+sudo apt update && sudo apt upgrade -y
+
+✅ Step 2: Install CUPS (Printing System)
+bash
+Copy
+Edit
+sudo apt install cups -y
+sudo systemctl enable cups
+sudo systemctl start cups
+sudo usermod -aG lpadmin $USER
+reboot
+✅ Step 3: Allow Remote Access to CUPS
+bash
+Copy
+Edit
+sudo nano /etc/cups/cupsd.conf
+Modify the following:
+Replace:
+
+mathematica
+Copy
+Edit
+Listen localhost:631
+With:
+
+nginx
+Copy
+Edit
+Port 631
+Add Allow @local to these blocks:
+
+conf
+Copy
+Edit
+<Location />
+  Order allow,deny
+  Allow @local
+</Location>
+
+<Location /admin>
+  Order allow,deny
+  Allow @local
+</Location>
+
+<Location /admin/conf>
+  AuthType Default
+  Require user @SYSTEM
+  Order allow,deny
+  Allow @local
+</Location>
+Save and close with Ctrl+O, Enter, Ctrl+X.
+
+Restart CUPS:
+
+bash
+Copy
+Edit
+sudo systemctl restart cups
+✅ Step 4: Install Canon LBP2900 CAPT Driver for ARM
+Install dependencies:
+bash
+Copy
+Edit
+sudo apt install libatk1.0-0 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk2.0-0 libusb-0.1-4 zlib1g libtiff5-dev libglade2-0 ghostscript-x gsfonts gsfonts-x11 libpango1.0-0 -y
+Download and install Canon CAPT driver:
+bash
+Copy
+Edit
+wget https://gdlp01.c-wss.com/gds/0/0100008450/04/linux-capt-drv-v271-uken.tar.gz
+tar -zxvf linux-capt-drv-v271-uken.tar.gz
+cd linux-capt-drv-v271-uken/armv7l_Driver/Debian
+sudo dpkg -i cndrvcups-common_3.21-1_armhf.deb
+sudo dpkg -i cndrvcups-capt_2.71-1_armhf.deb
+sudo apt --fix-broken install
+✅ Step 5: Register Printer with Canon Daemon
+Plug in the printer and check for USB device:
+
+bash
+Copy
+Edit
+lpinfo -v
+Register printer:
+
+bash
+Copy
+Edit
+sudo /usr/sbin/ccpdadmin -p LBP2900 -o /dev/usb/lp0
+✅ Step 6: Start Canon Daemon
+bash
+Copy
+Edit
+sudo /etc/init.d/ccpd start
+sudo /etc/init.d/ccpd status
+sudo update-rc.d ccpd defaults
+✅ Step 7: Add Printer via CUPS Web Interface
+Open your browser and go to:
+
+cpp
+Copy
+Edit
+http://<your-raspberry-pi-ip>:631
+Then:
+
+Go to Administration > Add Printer
+
+Select Canon LBP2900 (via USB)
+
+Use Canon CAPT driver
+
+Mark it as shared
+
+✅ Step 8: (Optional) Auto-Start CCPD at Boot
+bash
+Copy
+Edit
+sudo nano /etc/rc.local
+Add before exit 0:
+
+bash
+Copy
+Edit
+/etc/init.d/ccpd start
+Make it executable:
+
+bash
+Copy
+Edit
+sudo chmod +x /etc/rc.local
+✅ Done! Test Printer on Network
+From another device, add the printer using:
+
+arduino
+Copy
+Edit
+ipp://<raspberry-pi-ip>:631/printers/LBP2900
+Then print a test page!
+
+🛠️ Troubleshooting
+If the printer doesn't print, check with:
+
+bash
+Copy
+Edit
+sudo /etc/init.d/ccpd status
+Make sure CUPS is running and the printer is listed.
+
+Check CUPS web interface at http://<raspberry-pi-ip>:631.
+
+🙌 Credits
+Canon CAPT Linux driver
+
+CUPS Open Source Printing System
+
+vbnet
+Copy
+Edit
+
+Let me know if you'd like this saved as a downloadable `.md` file or want it styled as a GitHub README!
